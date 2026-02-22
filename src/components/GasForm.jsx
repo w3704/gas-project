@@ -4,6 +4,28 @@ import './GasForm.css';
 const DATE_STORAGE_KEY = 'gas-form-last-date';
 const REMEMBER_DATE_KEY = 'gas-form-remember-date';
 
+// ROC ↔ AD conversion helpers
+const ROC_OFFSET = 1911;
+const toROCYear = (adYear) => adYear - ROC_OFFSET;
+const toADYear = (rocYear) => rocYear + ROC_OFFSET;
+
+// Convert YYYY-MM-DD → { rocYear, month, day }
+const adToROCParts = (adDate) => {
+    if (!adDate) return { rocYear: '', month: '', day: '' };
+    const [y, m, d] = adDate.split('-');
+    return { rocYear: String(toROCYear(parseInt(y))), month: String(parseInt(m)), day: String(parseInt(d)) };
+};
+
+// Convert { rocYear, month, day } → YYYY-MM-DD
+const rocPartsToAD = (rocYear, month, day) => {
+    const ry = parseInt(rocYear);
+    const mm = parseInt(month);
+    const dd = parseInt(day);
+    if (isNaN(ry) || isNaN(mm) || isNaN(dd)) return '';
+    const adYear = toADYear(ry);
+    return `${adYear}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+};
+
 const getRememberDatePref = () => {
     try {
         const v = localStorage.getItem(REMEMBER_DATE_KEY);
@@ -36,7 +58,12 @@ const defaultForm = {
 
 export default function GasForm({ records, onSubmit }) {
     const [rememberDate, setRememberDate] = useState(getRememberDatePref);
-    const [form, setForm] = useState({ ...defaultForm, date: getInitialDate(rememberDate) });
+    const initialADDate = getInitialDate(rememberDate);
+    const initialROC = adToROCParts(initialADDate);
+    const [form, setForm] = useState({ ...defaultForm, date: initialADDate });
+    const [rocYear, setRocYear] = useState(initialROC.rocYear);
+    const [rocMonth, setRocMonth] = useState(initialROC.month);
+    const [rocDay, setRocDay] = useState(initialROC.day);
     const [carryReason, setCarryReason] = useState(false);
     const [carryUser, setCarryUser] = useState(false);
 
@@ -93,15 +120,23 @@ export default function GasForm({ records, onSubmit }) {
         } catch { /* ignore */ }
     }, [form.date]);
 
+    // Handle ROC date field changes
+    const handleROCDateChange = (part) => (e) => {
+        const val = e.target.value;
+        let newYear = rocYear, newMonth = rocMonth, newDay = rocDay;
+        if (part === 'year') { newYear = val; setRocYear(val); }
+        if (part === 'month') { newMonth = val; setRocMonth(val); }
+        if (part === 'day') { newDay = val; setRocDay(val); }
+        const adDate = rocPartsToAD(newYear, newMonth, newDay);
+        setForm(prev => ({ ...prev, date: adDate }));
+        if (rememberDate && adDate) {
+            try { localStorage.setItem(DATE_STORAGE_KEY, adDate); } catch { /* ignore */ }
+        }
+    };
+
     const handleChange = (field) => (e) => {
         const value = e.target.value;
         setForm(prev => ({ ...prev, [field]: value }));
-        // Persist date to localStorage if rememberDate is on
-        if (field === 'date' && rememberDate) {
-            try {
-                localStorage.setItem(DATE_STORAGE_KEY, value);
-            } catch { /* ignore */ }
-        }
     };
 
     const handleSubmit = (e) => {
@@ -129,10 +164,16 @@ export default function GasForm({ records, onSubmit }) {
         if (carryReason) newForm.reason = record.reason;
         if (carryUser) newForm.user = record.user;
         setForm(newForm);
+        // Keep ROC date fields
+        const keptROC = adToROCParts(record.date);
+        setRocYear(keptROC.rocYear);
+        setRocMonth(keptROC.month);
+        setRocDay(keptROC.day);
     };
 
     const handleReset = () => {
         setForm({ ...defaultForm });
+        setRocYear(''); setRocMonth(''); setRocDay('');
         setCarryReason(false);
         setCarryUser(false);
     };
@@ -141,16 +182,45 @@ export default function GasForm({ records, onSubmit }) {
 
     return (
         <form className="gas-form" onSubmit={handleSubmit}>
-            {/* Row 1: Date, Destination */}
+            {/* Row 1: Date (ROC format), Destination */}
             <div className="form-row">
                 <div className="form-group">
-                    <label>📅 日期</label>
-                    <input
-                        type="date"
-                        value={form.date}
-                        onChange={handleChange('date')}
-                        required
-                    />
+                    <label>📅 日期（民國年）</label>
+                    <div className="roc-date-row">
+                        <input
+                            type="number"
+                            className="roc-date-input roc-year"
+                            value={rocYear}
+                            onChange={handleROCDateChange('year')}
+                            placeholder="年"
+                            min="1"
+                            max="999"
+                            required
+                        />
+                        <span className="roc-date-sep">年</span>
+                        <input
+                            type="number"
+                            className="roc-date-input roc-md"
+                            value={rocMonth}
+                            onChange={handleROCDateChange('month')}
+                            placeholder="月"
+                            min="1"
+                            max="12"
+                            required
+                        />
+                        <span className="roc-date-sep">月</span>
+                        <input
+                            type="number"
+                            className="roc-date-input roc-md"
+                            value={rocDay}
+                            onChange={handleROCDateChange('day')}
+                            placeholder="日"
+                            min="1"
+                            max="31"
+                            required
+                        />
+                        <span className="roc-date-sep">日</span>
+                    </div>
                     <div className="carry-forward">
                         <input
                             type="checkbox"

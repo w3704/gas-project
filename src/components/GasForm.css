@@ -79,6 +79,53 @@
     letter-spacing: 0 !important;
 }
 
+/* ROC date input row */
+.roc-date-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.roc-date-input {
+    padding: 0.7rem 0.5rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+    outline: none;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.roc-date-input::-webkit-inner-spin-button,
+.roc-date-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.roc-date-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.roc-date-input.roc-year {
+    width: 5rem;
+}
+
+.roc-date-input.roc-md {
+    width: 3.5rem;
+}
+
+.roc-date-sep {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
 /* Fuel section divider */
 .fuel-section-label {
     grid-column: 1 / -1;

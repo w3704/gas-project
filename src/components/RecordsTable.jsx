@@ -1,5 +1,13 @@
 import './RecordsTable.css';
 
+// Format YYYY-MM-DD to ROC date: 民國XXX/MM/DD
+const formatROCDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const [y, m, d] = dateStr.split('-');
+    const rocYear = parseInt(y) - 1911;
+    return `${rocYear}/${m}/${d}`;
+};
+
 export default function RecordsTable({ records, onDelete }) {
     if (records.length === 0) {
         return (
@@ -17,7 +25,7 @@ export default function RecordsTable({ records, onDelete }) {
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>日期</th>
+                        <th>日期(民國)</th>
                         <th>目的地</th>
                         <th>事由</th>
                         <th>使用人</th>
@@ -33,7 +41,7 @@ export default function RecordsTable({ records, onDelete }) {
                     {records.map((r, i) => (
                         <tr key={r.id}>
                             <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
-                            <td>{r.date}</td>
+                            <td>{formatROCDate(r.date)}</td>
                             <td>{r.destination}</td>
                             <td>{r.reason}</td>
                             <td>{r.user}</td>

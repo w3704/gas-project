@@ -34,11 +34,12 @@ export async function exportFuelLog(records, templateUrl) {
     const endRow = 27;
     const maxRecords = endRow - startRow + 1; // 22
 
-    // Fill year-month into G3
+    // Fill year-month into G3 (民國年)
     const firstDate = records[0].date; // YYYY-MM-DD
     if (firstDate) {
         const [year, month] = firstDate.split('-');
-        ws.getCell('G3').value = `${parseInt(year)}年${parseInt(month)}月`;
+        const rocYear = parseInt(year) - 1911;
+        ws.getCell('G3').value = `${rocYear}年${parseInt(month)}月`;
     }
 
     // Fill records — data comes from dispatch (派車單里程) records
@@ -80,9 +81,10 @@ export async function exportFuelLog(records, templateUrl) {
     // Generate file
     const buffer = await wb.xlsx.writeBuffer();
 
-    // Filename with year-month
+    // Filename with ROC year-month
     const [year, month] = (records[0].date || '').split('-');
-    const filename = `消耗油料登記表_${year || '0000'}-${month || '00'}.xlsx`;
+    const rocYear = parseInt(year) - 1911;
+    const filename = `消耗油料登記表_民國${rocYear || '000'}年${month || '00'}月.xlsx`;
 
     const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

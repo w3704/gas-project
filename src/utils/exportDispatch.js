@@ -1,6 +1,14 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
+// YYYY-MM-DD → 民國YYY年MM月DD日
+const toROCDate = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    const rocYear = parseInt(y) - 1911;
+    return `${rocYear}年${parseInt(m)}月${parseInt(d)}日`;
+};
+
 /**
  * 派車單里程.xlsx 匯出（使用 exceljs 保留原始格式）
  *
@@ -9,9 +17,9 @@ import { saveAs } from 'file-saver';
  * - 左欄：目的地 B9→B19, 結束里程 D9→D19 (共11筆)
  * - 右欄：目的地 G8→G19, 結束里程 I8→I19 (共12筆)
  * - 駕駛人名 → I5
- * - 用車時間 → C4（日期）
+ * - 用車時間 → C4（日期，民國年）
  * - 當日出發里程 → D8
- * - 加油資料：加油日期 → A23, 公升數 → E23, 加油時里程 → I23
+ * - 加油資料：加油日期 → A23（民國年）, 公升數 → E23, 加油時里程 → I23
  */
 
 export async function exportDispatch(records, templateUrl) {
@@ -41,8 +49,8 @@ export async function exportDispatch(records, templateUrl) {
 
         const items = group.items;
 
-        // C4: 用車時間（日期）
-        ws.getCell('C4').value = group.date;
+        // C4: 用車時間（日期，民國年格式）
+        ws.getCell('C4').value = toROCDate(group.date);
 
         // D8: 當日出發里程（第一筆的出發里程）
         if (items.length > 0) {
@@ -89,9 +97,9 @@ export async function exportDispatch(records, templateUrl) {
             }
         }
 
-        // A23: 加油日期, E23: 公升數, I23: 加油時里程
+        // A23: 加油日期（民國年）, E23: 公升數, I23: 加油時里程
         if (hasFuel && fuelItem) {
-            ws.getCell('A23').value = fuelItem.date;
+            ws.getCell('A23').value = toROCDate(fuelItem.date);
             ws.getCell('E23').value = fuelItem.fuelLiters;
             ws.getCell('I23').value = fuelItem.currentFuelKm;
         }

@@ -1,0 +1,95 @@
+/* RecordsTable Styles */
+.records-table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+}
+
+.records-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+}
+
+.records-table thead th {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.7rem 0.6rem;
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.records-table tbody tr {
+    transition: background var(--transition-fast);
+}
+
+.records-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.records-table tbody td {
+    padding: 0.6rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.records-table tbody td.fuel-data {
+    color: var(--accent-secondary);
+    font-weight: 500;
+}
+
+.records-table tbody td .btn-delete {
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-sm);
+    color: var(--accent-danger);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.records-table tbody td .btn-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--accent-danger);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+
+.empty-state .icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+}
+
+.empty-state p {
+    font-size: 0.95rem;
+}
+
+.record-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-primary-hover);
+    font-size: 0.75rem;
+    font-weight: 700;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    margin-left: 0.5rem;
+}

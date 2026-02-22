@@ -2,8 +2,19 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import './GasForm.css';
 
 const DATE_STORAGE_KEY = 'gas-form-last-date';
+const REMEMBER_DATE_KEY = 'gas-form-remember-date';
 
-const getInitialDate = () => {
+const getRememberDatePref = () => {
+    try {
+        const v = localStorage.getItem(REMEMBER_DATE_KEY);
+        return v === null ? true : v === 'true'; // default true
+    } catch {
+        return true;
+    }
+};
+
+const getInitialDate = (shouldRemember) => {
+    if (!shouldRemember) return '';
     try {
         return localStorage.getItem(DATE_STORAGE_KEY) || '';
     } catch {
@@ -24,7 +35,8 @@ const defaultForm = {
 };
 
 export default function GasForm({ records, onSubmit }) {
-    const [form, setForm] = useState({ ...defaultForm, date: getInitialDate() });
+    const [rememberDate, setRememberDate] = useState(getRememberDatePref);
+    const [form, setForm] = useState({ ...defaultForm, date: getInitialDate(rememberDate) });
     const [carryReason, setCarryReason] = useState(false);
     const [carryUser, setCarryUser] = useState(false);
 
@@ -68,11 +80,24 @@ export default function GasForm({ records, onSubmit }) {
         return '';
     }, [form.currentFuelKm, form.lastFuelKm, form.fuelLiters]);
 
+    const handleRememberDateChange = useCallback((e) => {
+        const checked = e.target.checked;
+        setRememberDate(checked);
+        try {
+            localStorage.setItem(REMEMBER_DATE_KEY, String(checked));
+            if (!checked) {
+                localStorage.removeItem(DATE_STORAGE_KEY);
+            } else if (form.date) {
+                localStorage.setItem(DATE_STORAGE_KEY, form.date);
+            }
+        } catch { /* ignore */ }
+    }, [form.date]);
+
     const handleChange = (field) => (e) => {
         const value = e.target.value;
         setForm(prev => ({ ...prev, [field]: value }));
-        // Persist date to localStorage
-        if (field === 'date') {
+        // Persist date to localStorage if rememberDate is on
+        if (field === 'date' && rememberDate) {
             try {
                 localStorage.setItem(DATE_STORAGE_KEY, value);
             } catch { /* ignore */ }
@@ -126,6 +151,15 @@ export default function GasForm({ records, onSubmit }) {
                         onChange={handleChange('date')}
                         required
                     />
+                    <div className="carry-forward">
+                        <input
+                            type="checkbox"
+                            id="rememberDate"
+                            checked={rememberDate}
+                            onChange={handleRememberDateChange}
+                        />
+                        <label htmlFor="rememberDate">📌 記住日期</label>
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>📍 目的地</label>

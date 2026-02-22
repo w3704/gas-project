@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
  * 消耗油料登記表.xlsx 匯出（使用 exceljs 保留原始格式）
  *
  * 邏輯更新：資料來源改為已處理的派車單里程 records
+ * 先匯出派車單里程，再由派車單里程的 records 產生消耗油料登記表
  *
  * 規則：
  * - 資料填入 row 6~27 (最多 22 筆)
@@ -46,33 +47,32 @@ export async function exportFuelLog(records, templateUrl) {
         const r = records[i];
         const row = startRow + i;
 
-        // A欄: 日期 — 只填「日」的部分
+        // (1) A欄: 日期 — 只填「日」的部分（所有 record 都填）
         if (r.date) {
             const day = parseInt(r.date.split('-')[2], 10); // extract day from YYYY-MM-DD
             ws.getCell(`A${row}`).value = day;
         }
 
-        // 加油資料（從派車單里程讀取）
-        if (r.fuelLiters && r.fuelLiters > 0) {
-            // F欄: 加油公升數
+        // (2) F欄: 加油公升數（從派車單里程讀取）
+        if (r.fuelLiters != null && r.fuelLiters > 0) {
             ws.getCell(`F${row}`).value = r.fuelLiters;
         }
 
-        if (r.currentFuelKm && r.currentFuelKm > 0) {
-            // G欄: 加油當下里程
+        // (3) G欄: 加油當下里程（從派車單里程讀取）
+        if (r.currentFuelKm != null && r.currentFuelKm > 0) {
             ws.getCell(`G${row}`).value = r.currentFuelKm;
         }
 
-        // H欄: 公里數差距 (currentFuelKm - lastFuelKm)
-        if (r.currentFuelKm && r.lastFuelKm) {
+        // (4) H欄: 公里數差距 (currentFuelKm - lastFuelKm)
+        if (r.currentFuelKm != null && r.lastFuelKm != null) {
             const kmDiff = r.currentFuelKm - r.lastFuelKm;
             if (kmDiff > 0) {
                 ws.getCell(`H${row}`).value = kmDiff;
             }
         }
 
-        // J欄: 油耗 (km/l)
-        if (r.fuelConsumption && r.fuelConsumption > 0) {
+        // (5) J欄: 油耗 (km/l)
+        if (r.fuelConsumption != null && r.fuelConsumption > 0) {
             ws.getCell(`J${row}`).value = r.fuelConsumption;
         }
     }

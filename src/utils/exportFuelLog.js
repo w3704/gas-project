@@ -8,7 +8,9 @@ import { saveAs } from 'file-saver';
  * 先匯出派車單里程，再由派車單里程的 records 產生消耗油料登記表
  *
  * 規則：
- * - 資料填入 row 6~27 (最多 22 筆)
+ * - 資料按日期分組，每天佔一行，填入 row 6~27 (最多 22 天)
+ *   B欄 (B6~B27): 當日起始里程（該日第一筆的 startKm）
+ *   C欄 (C6~C27): 當日結束里程（該日最後一筆的 endKm）
  *   A欄 (A6~A27): 日期，只填「日」的部分
  *   F欄 同行: 加油公升數
  *   G欄 同行: 加油當下里程
@@ -32,7 +34,7 @@ export async function exportFuelLog(records, templateUrl) {
 
     const startRow = 6;
     const endRow = 27;
-    const maxRecords = endRow - startRow + 1; // 22
+    const maxDays = endRow - startRow + 1; // 22
 
     // Fill year-month into G3 (民國年)
     const firstDate = records[0].date; // YYYY-MM-DD
@@ -42,39 +44,63 @@ export async function exportFuelLog(records, templateUrl) {
         ws.getCell('G3').value = `${rocYear}年${parseInt(month)}月`;
     }
 
-    // Fill records — data comes from dispatch (派車單里程) records
-    const count = Math.min(records.length, maxRecords);
+    // Group records by date
+    const dateGroups = {};
+    const dateOrder = [];
+    records.forEach((r) => {
+        if (!r.date) return;
+        if (!dateGroups[r.date]) {
+            dateGroups[r.date] = [];
+            dateOrder.push(r.date);
+        }
+        dateGroups[r.date].push(r);
+    });
+
+    // Fill records — one row per day
+    const count = Math.min(dateOrder.length, maxDays);
     for (let i = 0; i < count; i++) {
-        const r = records[i];
+        const date = dateOrder[i];
+        const dayRecords = dateGroups[date];
         const row = startRow + i;
 
-        // (1) A欄: 日期 — 只填「日」的部分（所有 record 都填）
-        if (r.date) {
-            const day = parseInt(r.date.split('-')[2], 10); // extract day from YYYY-MM-DD
-            ws.getCell(`A${row}`).value = day;
+        // (1) A欄: 日期 — 只填「日」的部分
+        const day = parseInt(date.split('-')[2], 10);
+        ws.getCell(`A${row}`).value = day;
+
+        // (2) B欄: 當日起始里程（該日第一筆的 startKm）
+        const firstRecord = dayRecords[0];
+        if (firstRecord.startKm != null) {
+            ws.getCell(`B${row}`).value = firstRecord.startKm;
         }
 
-        // (2) F欄: 加油公升數（從派車單里程讀取）
-        if (r.fuelLiters != null && r.fuelLiters > 0) {
-            ws.getCell(`F${row}`).value = r.fuelLiters;
+        // (3) C欄: 當日結束里程（該日最後一筆的 endKm）
+        const lastRecord = dayRecords[dayRecords.length - 1];
+        if (lastRecord.endKm != null) {
+            ws.getCell(`C${row}`).value = lastRecord.endKm;
         }
 
-        // (3) G欄: 加油當下里程（從派車單里程讀取）
-        if (r.currentFuelKm != null && r.currentFuelKm > 0) {
-            ws.getCell(`G${row}`).value = r.currentFuelKm;
-        }
+        // (4) F欄: 加油公升數（從該日有加油的紀錄讀取）
+        const fuelRecord = dayRecords.find(r => r.fuelLiters != null && r.fuelLiters > 0);
+        if (fuelRecord) {
+            ws.getCell(`F${row}`).value = fuelRecord.fuelLiters;
 
-        // (4) H欄: 公里數差距 (currentFuelKm - lastFuelKm)
-        if (r.currentFuelKm != null && r.lastFuelKm != null) {
-            const kmDiff = r.currentFuelKm - r.lastFuelKm;
-            if (kmDiff > 0) {
-                ws.getCell(`H${row}`).value = kmDiff;
+            // (5) G欄: 加油當下里程
+            if (fuelRecord.currentFuelKm != null && fuelRecord.currentFuelKm > 0) {
+                ws.getCell(`G${row}`).value = fuelRecord.currentFuelKm;
             }
-        }
 
-        // (5) J欄: 油耗 (km/l)
-        if (r.fuelConsumption != null && r.fuelConsumption > 0) {
-            ws.getCell(`J${row}`).value = r.fuelConsumption;
+            // (6) H欄: 公里數差距 (currentFuelKm - lastFuelKm)
+            if (fuelRecord.currentFuelKm != null && fuelRecord.lastFuelKm != null) {
+                const kmDiff = fuelRecord.currentFuelKm - fuelRecord.lastFuelKm;
+                if (kmDiff > 0) {
+                    ws.getCell(`H${row}`).value = kmDiff;
+                }
+            }
+
+            // (7) J欄: 油耗 (km/l)
+            if (fuelRecord.fuelConsumption != null && fuelRecord.fuelConsumption > 0) {
+                ws.getCell(`J${row}`).value = fuelRecord.fuelConsumption;
+            }
         }
     }
 

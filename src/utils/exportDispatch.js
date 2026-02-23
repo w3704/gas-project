@@ -49,6 +49,11 @@ export async function exportDispatch(records, templateUrl) {
 
         const items = group.items;
 
+        // C2: 事由（取該組第一筆的事由）
+        if (items.length > 0 && items[0].reason) {
+            ws.getCell('C2').value = items[0].reason;
+        }
+
         // C4: 用車時間（日期，民國年格式）
         ws.getCell('C4').value = toROCDate(group.date);
 

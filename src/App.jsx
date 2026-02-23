@@ -9,7 +9,7 @@ const STORAGE_KEY = 'gas-counter-records';
 
 // Template URLs (Vite will handle these as static assets)
 const DISPATCH_TEMPLATE_URL = new URL('./assets/派車單里程_new.xlsx', import.meta.url).href;
-const FUEL_LOG_TEMPLATE_URL = new URL('./assets/消耗油料登記表_new.xlsx', import.meta.url).href;
+const FUEL_LOG_TEMPLATE_URL = new URL('./assets/消耗油料登記表_new_3.xlsx', import.meta.url).href;
 
 function App() {
   const [records, setRecords] = useState(() => {
